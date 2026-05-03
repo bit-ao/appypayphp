@@ -110,12 +110,13 @@ class AppyPay
                 json_decode((string) $response->getBody(), true)
             );
         } catch (RequestException $e) {
-            $body = $e->hasResponse()
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
                 ? json_decode((string) $e->getResponse()->getBody(), true)
                 : null;
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
         } catch (GuzzleException $e) {
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
         }
     }
 
@@ -134,12 +135,13 @@ class AppyPay
                 json_decode((string) $response->getBody(), true)
             );
         } catch (RequestException $e) {
-            $body = $e->hasResponse()
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
                 ? json_decode((string) $e->getResponse()->getBody(), true)
                 : null;
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
         } catch (GuzzleException $e) {
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
         }
     }
 
@@ -172,12 +174,13 @@ class AppyPay
                 json_decode((string) $response->getBody(), true)
             );
         } catch (RequestException $e) {
-            $body = $e->hasResponse()
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
                 ? json_decode((string) $e->getResponse()->getBody(), true)
                 : null;
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
         } catch (GuzzleException $e) {
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
         }
     }
 
@@ -242,12 +245,13 @@ class AppyPay
                 json_decode((string) $response->getBody(), true)
             );
         } catch (RequestException $e) {
-            $body = $e->hasResponse()
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
                 ? json_decode((string) $e->getResponse()->getBody(), true)
                 : null;
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
         } catch (GuzzleException $e) {
-            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
         }
     }
 
