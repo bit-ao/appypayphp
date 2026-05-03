@@ -11,6 +11,8 @@ use Bit\AppyPay\Dtos\PaymentInfoEtpaDto;
 use Bit\AppyPay\Dtos\PaymentInfoGpoDto;
 use Bit\AppyPay\Dtos\PaymentInfoRefDto;
 use Bit\AppyPay\Dtos\QrChargeDto;
+use Bit\AppyPay\Dtos\RegisterReferenceDto;
+use Bit\AppyPay\Dtos\RegisterReferenceResponseDto;
 use Bit\AppyPay\Enums\PaymentMethod;
 use Bit\AppyPay\Exception\AppyPayException;
 use Bit\AppyPay\Storage\DiskTokenStorage;
@@ -138,6 +140,68 @@ class AppyPay
             throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
         } catch (GuzzleException $e) {
             throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+        }
+    }
+
+    /**
+     * Registers one or more permanent payment references at AppyPay.
+     * The merchant chooses the referenceNumber (9-15 digits, starting with 0
+     * by convention for auto-generated). Once registered, the reference accepts
+     * payments within the [minAmount, maxAmount] range until expirationDate.
+     * Each payment fires a webhook to the merchant's configured endpoint.
+     *
+     * If $input->paymentMethod is empty, falls back to the REF identifier
+     * configured via APPYPAY_REF env var.
+     */
+    public function registerReference(RegisterReferenceDto $input): RegisterReferenceResponseDto
+    {
+        if ($input->paymentMethod === '') {
+            $input->paymentMethod = $this->methods?->ref ?? '';
+        }
+
+        self::validateRegisterReference($input);
+        $token = $this->auth();
+
+        try {
+            $response = $this->client->post('references', [
+                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
+                'json'    => $input->toArray(),
+            ]);
+
+            return RegisterReferenceResponseDto::fromArray(
+                json_decode((string) $response->getBody(), true)
+            );
+        } catch (RequestException $e) {
+            $body = $e->hasResponse()
+                ? json_decode((string) $e->getResponse()->getBody(), true)
+                : null;
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body);
+        } catch (GuzzleException $e) {
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR');
+        }
+    }
+
+    private static function validateRegisterReference(RegisterReferenceDto $input): void
+    {
+        if ($input->paymentMethod === '') {
+            throw new \InvalidArgumentException(
+                'paymentMethod é obrigatório (configure APPYPAY_REF ou passe explicitamente)'
+            );
+        }
+        if (empty($input->references)) {
+            throw new \InvalidArgumentException('references[] não pode estar vazio');
+        }
+        foreach ($input->references as $i => $ref) {
+            if (!preg_match('/^\d{9,15}$/', $ref->referenceNumber)) {
+                throw new \InvalidArgumentException(
+                    "references[$i].referenceNumber inválido: {$ref->referenceNumber} (9-15 dígitos numéricos)"
+                );
+            }
+            if ($ref->minAmount !== null && $ref->maxAmount !== null && $ref->minAmount > $ref->maxAmount) {
+                throw new \InvalidArgumentException(
+                    "references[$i]: minAmount não pode ser maior que maxAmount"
+                );
+            }
         }
     }
 
