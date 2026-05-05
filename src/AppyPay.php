@@ -14,6 +14,8 @@ use Bit\AppyPay\Dtos\QrChargeDto;
 use Bit\AppyPay\Dtos\GetChargeResponseDto;
 use Bit\AppyPay\Dtos\ListChargesQueryDto;
 use Bit\AppyPay\Dtos\ListChargesResponseDto;
+use Bit\AppyPay\Dtos\ListReferencesQueryDto;
+use Bit\AppyPay\Dtos\ListReferencesResponseDto;
 use Bit\AppyPay\Dtos\RegisterReferenceDto;
 use Bit\AppyPay\Dtos\RegisterReferenceResponseDto;
 use Bit\AppyPay\Enums\PaymentMethod;
@@ -241,6 +243,34 @@ class AppyPay
 
             return RegisterReferenceResponseDto::fromArray(
                 json_decode((string) $response->getBody(), true)
+            );
+        } catch (RequestException $e) {
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
+                ? json_decode((string) $e->getResponse()->getBody(), true)
+                : null;
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
+        } catch (GuzzleException $e) {
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
+        }
+    }
+
+    /**
+     * Lists registered references using the merchant support endpoint.
+     * Default AppyPay limit is 50 records; pass limit/skip explicitly to paginate.
+     */
+    public function listReferences(?ListReferencesQueryDto $query = null): ListReferencesResponseDto
+    {
+        $token = $this->auth();
+
+        try {
+            $response = $this->client->get('references', [
+                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
+                'query'   => $query?->toQueryArray() ?? [],
+            ]);
+
+            return ListReferencesResponseDto::fromArray(
+                json_decode((string) $response->getBody(), true) ?: []
             );
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
