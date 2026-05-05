@@ -19,6 +19,8 @@ class PaymentDto
     public ?string $updatedDate           = null;
     public ?array  $options               = null;
     public ?ReferenceDto $reference       = null;
+    /** @var TransactionEventDto[]|null */
+    public ?array  $transactionEvents     = null;
 
     public static function fromArray(array $data): self
     {
@@ -40,6 +42,14 @@ class PaymentDto
         $dto->reference             = is_array($data['reference'] ?? null)
             ? ReferenceDto::fromArray($data['reference'])
             : null;
+
+        if (is_array($data['transactionEvents'] ?? null)) {
+            $dto->transactionEvents = array_map(
+                static fn ($e) => TransactionEventDto::fromArray($e),
+                $data['transactionEvents']
+            );
+        }
+
         return $dto;
     }
 }

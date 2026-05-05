@@ -11,6 +11,7 @@ use Bit\AppyPay\Dtos\PaymentInfoEtpaDto;
 use Bit\AppyPay\Dtos\PaymentInfoGpoDto;
 use Bit\AppyPay\Dtos\PaymentInfoRefDto;
 use Bit\AppyPay\Dtos\QrChargeDto;
+use Bit\AppyPay\Dtos\GetChargeResponseDto;
 use Bit\AppyPay\Dtos\ListChargesQueryDto;
 use Bit\AppyPay\Dtos\ListChargesResponseDto;
 use Bit\AppyPay\Dtos\RegisterReferenceDto;
@@ -162,6 +163,44 @@ class AppyPay
             ]);
 
             return ListChargesResponseDto::fromArray(
+                json_decode((string) $response->getBody(), true) ?: []
+            );
+        } catch (RequestException $e) {
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            $body   = $e->hasResponse()
+                ? json_decode((string) $e->getResponse()->getBody(), true)
+                : null;
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', $body, $status);
+        } catch (GuzzleException $e) {
+            throw new AppyPayException($e->getMessage(), 'HTTP_ERROR', null, null);
+        }
+    }
+
+    /**
+     * Gets a single charge by gateway transaction ID (UUID).
+     * Optionally pass `merchantTransactionId` for cross-validation against
+     * the merchant-side identifier.
+     */
+    public function getCharge(string $id, ?string $merchantTransactionId = null): GetChargeResponseDto
+    {
+        if ($id === '') {
+            throw new \InvalidArgumentException('id é obrigatório (UUID da transação no gateway)');
+        }
+
+        $query = [];
+        if ($merchantTransactionId !== null && $merchantTransactionId !== '') {
+            $query['merchantTransactionId'] = $merchantTransactionId;
+        }
+
+        $token = $this->auth();
+
+        try {
+            $response = $this->client->get('charges/' . rawurlencode($id), [
+                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
+                'query'   => $query,
+            ]);
+
+            return GetChargeResponseDto::fromArray(
                 json_decode((string) $response->getBody(), true) ?: []
             );
         } catch (RequestException $e) {
