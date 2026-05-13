@@ -98,22 +98,21 @@ class AppyPay
     public function chargeExpress(BaseChargeDto $input): CreateChargeResponseDto
     {
         self::validate($input);
-        $token   = $this->auth();
-        $headers = ['Authorization' => 'Bearer ' . $token->accessToken];
-
-        if ($input->paymentMethod === PaymentMethod::aexpress) {
-            $headers['Accept'] = 'application/vnd.appypay.asyncapi+json';
-        }
 
         try {
-            $response = $this->client->post('charges', [
-                'headers' => $headers,
-                'json'    => $this->buildChargeBody($input),
-            ]);
-
-            return CreateChargeResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true)
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($input) {
+                $headers = ['Authorization' => 'Bearer ' . $bearer];
+                if ($input->paymentMethod === PaymentMethod::aexpress) {
+                    $headers['Accept'] = 'application/vnd.appypay.asyncapi+json';
+                }
+                $response = $this->client->post('charges', [
+                    'headers' => $headers,
+                    'json'    => $this->buildChargeBody($input),
+                ]);
+                return CreateChargeResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true)
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -128,17 +127,17 @@ class AppyPay
     public function chargeRef(BaseChargeDto $input): CreateChargeResponseDto
     {
         self::validate($input);
-        $token = $this->auth();
 
         try {
-            $response = $this->client->post('charges', [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'json'    => $this->buildChargeBody($input),
-            ]);
-
-            return CreateChargeResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true)
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($input) {
+                $response = $this->client->post('charges', [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'json'    => $this->buildChargeBody($input),
+                ]);
+                return CreateChargeResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true)
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -156,17 +155,16 @@ class AppyPay
      */
     public function listCharges(?ListChargesQueryDto $query = null): ListChargesResponseDto
     {
-        $token = $this->auth();
-
         try {
-            $response = $this->client->get('charges', [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'query'   => $query?->toQueryArray() ?? [],
-            ]);
-
-            return ListChargesResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true) ?: []
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($query) {
+                $response = $this->client->get('charges', [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'query'   => $query?->toQueryArray() ?? [],
+                ]);
+                return ListChargesResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true) ?: []
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -194,17 +192,16 @@ class AppyPay
             $query['merchantTransactionId'] = $merchantTransactionId;
         }
 
-        $token = $this->auth();
-
         try {
-            $response = $this->client->get('charges/' . rawurlencode($id), [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'query'   => $query,
-            ]);
-
-            return GetChargeResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true) ?: []
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($id, $query) {
+                $response = $this->client->get('charges/' . rawurlencode($id), [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'query'   => $query,
+                ]);
+                return GetChargeResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true) ?: []
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -233,17 +230,17 @@ class AppyPay
         }
 
         self::validateRegisterReference($input);
-        $token = $this->auth();
 
         try {
-            $response = $this->client->post('references', [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'json'    => $input->toArray(),
-            ]);
-
-            return RegisterReferenceResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true)
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($input) {
+                $response = $this->client->post('references', [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'json'    => $input->toArray(),
+                ]);
+                return RegisterReferenceResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true)
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -261,17 +258,16 @@ class AppyPay
      */
     public function listReferences(?ListReferencesQueryDto $query = null): ListReferencesResponseDto
     {
-        $token = $this->auth();
-
         try {
-            $response = $this->client->get('references', [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'query'   => $query?->toQueryArray() ?? [],
-            ]);
-
-            return ListReferencesResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true) ?: []
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($query) {
+                $response = $this->client->get('references', [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'query'   => $query?->toQueryArray() ?? [],
+                ]);
+                return ListReferencesResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true) ?: []
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
@@ -315,7 +311,6 @@ class AppyPay
         $input->paymentInfo = $etpa;
 
         self::validate($input);
-        $token = $this->auth();
 
         $body = [
             'currency'              => 'AOA',
@@ -335,14 +330,15 @@ class AppyPay
         }
 
         try {
-            $response = $this->client->post('qr-codes', [
-                'headers' => ['Authorization' => 'Bearer ' . $token->accessToken],
-                'json'    => $body,
-            ]);
-
-            return CreateQrChargeResponseDto::fromArray(
-                json_decode((string) $response->getBody(), true)
-            );
+            return $this->tokenProvider->withToken(function (string $bearer) use ($body) {
+                $response = $this->client->post('qr-codes', [
+                    'headers' => ['Authorization' => 'Bearer ' . $bearer],
+                    'json'    => $body,
+                ]);
+                return CreateQrChargeResponseDto::fromArray(
+                    json_decode((string) $response->getBody(), true)
+                );
+            });
         } catch (RequestException $e) {
             $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
             $body   = $e->hasResponse()
